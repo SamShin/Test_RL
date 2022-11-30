@@ -9,38 +9,29 @@ logs = ["splink.estimate_u", "splink.expectation_maximisation", "splink.settings
 for log in logs:
     logging.getLogger(log).setLevel(logging.ERROR)
 
-columns = ["first_name", "middle_name", "last_name", "res_street_address", "birth_year", "zip_code"]
-#columns = ["first_name", "middle_name", "last_name", "res_street_address", "birth_year"]
+columns = ["id", "first_name", "middle_name", "last_name", "res_street_address", "birth_year", "zip_code"]
 
-missing_percent = [0.1, 0.1, 0.1, 0.1, 0.1, 0.0, 0.0]
-#missing_percent = [0.1, 0.1, 0.1, 0.1, 0.1, 0.0]
+missing_percent = [0.0, 0.1, 0.1, 0.1, 0.1, 0.1, 0.0]
 
-data = pd.read_csv("data/clean_data.csv", low_memory=False)
-df = pd.DataFrame(data)
-df = df[columns]
-
-unique_id = df.copy(deep=True)
-unique_id = unique_id.groupby(columns).ngroup()
-df['unique_id'] = unique_id
+data = pd.read_csv("data/clean_county.csv", low_memory=False) #TODO: Get the data directory right
+df = pd.DataFrame(data)[columns].astype(str)
 
 settings = {
     "link_type": "link_only",
+    "unique_id_column_name": "id",
     "comparisons": [
         cl.levenshtein_at_thresholds(col_name="first_name", distance_threshold_or_thresholds=1, include_exact_match_level=False),
         cl.levenshtein_at_thresholds(col_name="last_name", distance_threshold_or_thresholds=1, include_exact_match_level=False),
         cl.levenshtein_at_thresholds(col_name="middle_name", distance_threshold_or_thresholds=1, include_exact_match_level=False),
         cl.levenshtein_at_thresholds(col_name="res_street_address", distance_threshold_or_thresholds=1, include_exact_match_level=False),
-        cl.exact_match(col_name="birth_year")
+        cl.levenshtein_at_thresholds(col_name="birth_year", distance_threshold_or_thresholds=1, include_exact_match_level=False)
     ],
     "blocking_rules_to_generate_predictions": [
        "l.zip_code = r.zip_code"
-    ],
-    "retain_matching_columns": False,
-    "max_iterations": 100,
-    "em_convergence": 1e-4
+    ]
 }
 
-x = [2500,5000,7500,10000,12500,15000,17500,20000,22500,25000,27500,30000,32500,35000,37500,40000]
+x = [2000,4000,6000,8000,10000,12000,14000,16000,18000,20000,22000,24000,26000,28000,30000,32000,34000,36000,38000,40000]
 for size in x:
 
     sample_size = round(size * 1.5)
@@ -62,6 +53,7 @@ for size in x:
     dfA = pd.concat(frame_a)
     dfB = pd.concat(frame_b)
 
+
     time_start = time.time()
 
     linker = DuckDBLinker([dfA, dfB], settings)
@@ -75,12 +67,29 @@ for size in x:
 
     for i in training:
         linker.estimate_parameters_using_expectation_maximisation(i)
-
-    df_predict = linker.predict(threshold_match_probability=0.95)
-    output = df_predict.as_record_dict()
-
+    predict = linker.predict(0.95)
     time_end = time.time()
 
-    #time.sleep(600)
-    print("[" + str(size) + "] " + str(len(output)) + " links" +
-          " | " + str(round((time_end - time_start), 3)) + " seconds")
+
+    df_predict = predict.as_pandas_dataframe()
+    pairs = linker.count_num_comparisons_from_blocking_rule("l.zip_code = r.zip_code")
+
+    false_positive = len(df_predict.loc[df_predict["id_l"] != df_predict["id_r"]])
+    true_positive = len(df_predict.loc[df_predict["id_l"] == df_predict["id_r"]])
+    false_negative = round(size/2) - true_positive
+
+    precision = true_positive / (true_positive + false_positive)
+    recall = true_positive / (true_positive + false_negative)
+
+    with open("results/splink_block.txt", "a") as f:
+        f.writelines(
+            "Sample Size: " + str(size) +
+            "|Links Predicted: " + str(len(df_predict)) +
+            "|Time Taken: " + str(round((time_end - time_start),2)) +
+            "|Precision: " + str(precision) +
+            "|Recall: " + str(recall) +
+            "|Linkage Pairs: " + str(pairs) +
+            "\n"
+        )
+
+    time.sleep(600)
