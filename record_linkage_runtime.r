@@ -1,12 +1,12 @@
 library(RecordLinkage)
-library(tictoc)
 
-dataSet <- read.csv("data/clean_data.csv", header=TRUE)
+myOptions <- options(digits.secs = 2)
 
-linkageFields <- c("first_name", "middle_name", "last_name", "res_street_address", "birth_year", "zip_code")
+dataSet <- read.csv("data/clean_county.csv", header=TRUE)
+linkageFields <- c("first_name", "middle_name", "last_name", "res_street_address", "birth_year", "zip_code", "id")
 dataSet <- dataSet[linkageFields]
 
-x <- c(2000)
+x <- c(2000,4000,6000,8000,10000,12000,14000,16000,18000,20000,22000,24000,26000,28000,30000,32000,34000,36000,38000,40000)
 for (size in x) {
   sampleSize <- size
   sampleSize <- as.integer(sampleSize) * 1.5
@@ -16,7 +16,7 @@ for (size in x) {
   sampleSet <- sampleSet[sample(nrow(sampleSet), sampleSize), ]
 
   columns <- colnames(sampleSet)
-  for (name in columns[1:4]) {
+  for (name in columns[1:5]) {
     sampleSet[[name]][sample(nrow(sampleSet), sampleSize * 0.1)] <- NA
   }
 
@@ -29,22 +29,38 @@ for (size in x) {
   dfA <- rbind(dfAFirstHalf, dfASecondHalf)
   dfB <- rbind(dfBFirstHalf, dfBSecondHalf)
 
-  tic("ReconrdLinkage")
+  timeStart <- (format(Sys.time(), "%OS"))
 
   rPairsRL <- compare.linkage(dataset1 = dfA,
                               dataset2 = dfB,
                               blockfld = c(6),
-                              strcmpfun = levenshteinDist)
+                              strcmpfun = levenshteinDist,
+                              identity1 = dfA[["id"]],
+                              identity2 = dfB[["id"]])
 
-  rPairsWeights <- emWeights(rpairs = rPairsRL,
-                             cutoff = 0.95,
-                             maxit = 100,
-                             tol = 1e-4)
+  rPairsWeights <- emWeights(rpairs = rPairsRL)
 
   rPairsClassify <- emClassify(rpairs = rPairsWeights,
-                               threshold.upper = 11)
+                               threshold.upper = 11) #Have to provide a threshold
 
-  print(summary(rPairsClassify))
-  print(paste("[",as.character(size),"]",  sep = ""))
-  toc()
+  timeEnd <- (format(Sys.time(), "%OS"))
+
+  linksPredicted <- (nrow(getPairs(rPairsClassify, min.weight = 11, single.rows = TRUE)))
+  linkagePairs <- nrow(rPairsRL[[3]])
+  timeTaken <- (as.numeric(timeEnd) - as.numeric(timeStart))
+
+  errorMeasures <- (getErrorMeasures(rPairsClassify))
+  precision <- errorMeasures[["precision"]]
+  recall <- errorMeasures[["sensitivity"]]
+
+  output <- paste("Sample Size: ", size,
+                  "|Links Predicted: ", linksPredicted,
+                  "|Time Taken: ", timeTaken,
+                  "|Precision: ", precision,
+                  "|Recall: ", recall,
+                  "|Linkage Pairs: ", linkagePairs, sep = "")
+
+  write(output, file="results/r_record_linkage_block.txt", append=TRUE)
+
+  Sys.sleep(600)
 }

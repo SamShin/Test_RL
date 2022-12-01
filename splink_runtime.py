@@ -4,7 +4,6 @@ import logging
 import time
 import pandas as pd
 
-#TODO: Should I still remove logs?
 logs = ["splink.estimate_u", "splink.expectation_maximisation", "splink.settings", "splink.em_training_session", "comparison_level"]
 for log in logs:
     logging.getLogger(log).setLevel(logging.ERROR)
@@ -13,7 +12,7 @@ columns = ["id", "first_name", "middle_name", "last_name", "res_street_address",
 
 missing_percent = [0.0, 0.1, 0.1, 0.1, 0.1, 0.1, 0.0]
 
-data = pd.read_csv("data/clean_county.csv", low_memory=False) #TODO: Get the data directory right
+data = pd.read_csv("data/clean_county.csv", low_memory=False)
 df = pd.DataFrame(data)[columns].astype(str)
 
 settings = {
@@ -67,7 +66,7 @@ for size in x:
 
     for i in training:
         linker.estimate_parameters_using_expectation_maximisation(i)
-    predict = linker.predict(0.95)
+    predict = linker.predict(0.95) #Has None as a dafault value, thus 0.95 was needed for any analysis
     time_end = time.time()
 
 
@@ -92,4 +91,4 @@ for size in x:
             "\n"
         )
 
-    time.sleep(600)
+    #time.sleep(600)
