@@ -3,10 +3,10 @@ library(tictoc)
 
 dataSet <- read.csv("data/clean_county.csv", header=TRUE)
 
-linkageFields <- c("first_name", "middle_name", "last_name", "res_street_address", "birth_year")
+linkageFields <- c("first_name", "middle_name", "last_name", "res_street_address", "birth_year", "id")
 dataSet <- dataSet[linkageFields]
 dataSet$birth_year <- as.numeric(as.character(dataSet$birth_year))
-x <- c(1000)
+x <- c(10000)
 for (size in x) {
   sampleSize <- size
   sampleSize <- as.integer(sampleSize) * 1.5
@@ -37,13 +37,19 @@ for (size in x) {
                        stringdist.method = "lv",
                        numeric.match = c("birth_year"),
                        n.cores = 8,
-                       return.all = TRUE)
+                       return.all = TRUE,
+                       return.df = TRUE)
   
+  sam <- rPairsFL[["matches"]]
+  trueMatch <- sam[sam$inds.a == sam$inds.b,]
+  falseMatch <- sam[sam$inds.a != sam$inds.b,]
+
+  #testGetMatches <- getMatches(dfA = dfA, dfB = dfB, fl.out = rPairsFL, threshold.match = 0.95, combine.dfs = TRUE)
   print(confusion(rPairsFL))
   #sink("sink.txt", append=TRUE, type=c("output", "message"))
   print(summary(rPairsFL))
   print(paste("[",as.character(size),"]", " ---------------------------",  sep = ""))
   #sink()
   toc()
-  Sys.sleep(600)
+  #Sys.sleep(600)
 }
