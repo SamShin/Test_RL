@@ -3,14 +3,6 @@ from recordlinkage.index import Block
 import time
 import pandas as pd
 
-pd.options.display.max_rows = None
-pd.options.display.max_columns = None
-
-pd.set_option("display.max_rows", 200)
-pd.set_option("display.max_columns", 100)
-pd.set_option("display.max_colwidth", 200)
-
-
 recordlinkage.logging.set_verbosity(recordlinkage.logging.ERROR)
 
 columns = ["first_name", "middle_name", "last_name", "res_street_address", "birth_year", "zip_code"]
@@ -19,7 +11,7 @@ missing_percent = [0.1, 0.1, 0.1, 0.1, 0.1, 0]
 data = pd.read_csv("data/clean_county.csv", low_memory=False)
 df = pd.DataFrame(data, columns = columns)
 
-x = [100,200]
+x = [2000,4000,6000,8000,10000,12000,14000,16000,18000,20000,22000,24000,26000,28000,30000,32000,34000,36000,38000,40000]
 for size in x:
     sample_size = round(size * 1.5)
     sample_set = df.sample(sample_size)
@@ -44,7 +36,6 @@ for size in x:
 
     indexer = recordlinkage.Index()
     indexer.add(Block("zip_code", "zip_code"))
-    #indexer.full()
 
     pairs = indexer.index(dfA, dfB)
 
@@ -76,5 +67,5 @@ for size in x:
             "|Links Predicted: " + str(len(links_pred)) +
             "\n")
 
-    #time.sleep(600)
+    time.sleep(600)
 

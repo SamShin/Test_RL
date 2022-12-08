@@ -91,4 +91,4 @@ for size in x:
             "\n"
         )
 
-    #time.sleep(600)
+    time.sleep(600)

@@ -2,7 +2,8 @@ library(RecordLinkage)
 
 myOptions <- options(digits.secs = 2)
 
-dataSet <- read.csv("data/clean_county.csv", header=TRUE)
+dataSet <- read.csv("data/clean_county.csv", header = TRUE)
+
 linkageFields <- c("first_name", "middle_name", "last_name", "res_street_address", "birth_year", "zip_code", "id")
 dataSet <- dataSet[linkageFields]
 
@@ -47,7 +48,7 @@ for (size in x) {
 
   linksPredicted <- (nrow(getPairs(rPairsClassify, min.weight = 11, single.rows = TRUE)))
   linkagePairs <- nrow(rPairsRL[[3]])
-  timeTaken <- (as.numeric(timeEnd) - as.numeric(timeStart))
+  timeTaken <- abs(as.numeric(timeEnd) - as.numeric(timeStart))
 
   errorMeasures <- (getErrorMeasures(rPairsClassify))
   precision <- errorMeasures[["precision"]]
@@ -60,7 +61,7 @@ for (size in x) {
                   "|Recall: ", recall,
                   "|Linkage Pairs: ", linkagePairs, sep = "")
 
-  write(output, file="results/r_record_linkage_block.txt", append=TRUE)
+  write(output, file = "results/r_record_linkage_block.txt", append = TRUE)
 
   Sys.sleep(600)
 }

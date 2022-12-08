@@ -1,12 +1,14 @@
 library(fastLink)
-library(tictoc)
 
-dataSet <- read.csv("data/clean_county.csv", header=TRUE)
+myOptions <- options(digits.secs = 2)
 
-linkageFields <- c("first_name", "middle_name", "last_name", "res_street_address", "birth_year", "id")
+dataSet <- read.csv("data/clean_county.csv", header = TRUE)
+
+linkageFields <- c("first_name", "middle_name", "last_name", "res_street_address", "birth_year", "zip_code")
 dataSet <- dataSet[linkageFields]
-dataSet$birth_year <- as.numeric(as.character(dataSet$birth_year))
-x <- c(10000)
+dataSet$birth_year <- as.character((dataSet$birth_year))
+
+x <- c(2000,4000,6000,8000,10000,12000,14000,16000,18000,20000,22000,24000,26000,28000,30000,32000,34000,36000,38000,40000)
 for (size in x) {
   sampleSize <- size
   sampleSize <- as.integer(sampleSize) * 1.5
@@ -15,7 +17,8 @@ for (size in x) {
   sampleSet <- dataSet
   sampleSet <- sampleSet[sample(nrow(sampleSet), sampleSize), ]
 
-  for (name in colnames(sampleSet)) {
+  columns <- colnames(sampleSet)
+  for (name in columns[1:5]) {
     sampleSet[[name]][sample(nrow(sampleSet), sampleSize * 0.1)] <- NA
   }
 
@@ -28,28 +31,64 @@ for (size in x) {
   dfA <- rbind(dfAFirstHalf, dfASecondHalf)
   dfB <- rbind(dfBFirstHalf, dfBSecondHalf)
 
-  tic("FastLink")
+  timeStart <- (format(Sys.time(), "%OS"))
 
-  rPairsFL <- fastLink(dfA = dfA,
-                       dfB = dfB,
-                       varnames = linkageFields,
-                       stringdist.match = c("first_name", "middle_name", "last_name", "res_street_address"),
-                       stringdist.method = "lv",
-                       numeric.match = c("birth_year"),
-                       n.cores = 8,
-                       return.all = TRUE,
-                       return.df = TRUE)
-  
-  sam <- rPairsFL[["matches"]]
-  trueMatch <- sam[sam$inds.a == sam$inds.b,]
-  falseMatch <- sam[sam$inds.a != sam$inds.b,]
+  blockOut <- blockData(dfA, dfB, varnames = c("zip_code"))
+  fOut <- vector(mode = "list", length = length(blockOut))
 
-  #testGetMatches <- getMatches(dfA = dfA, dfB = dfB, fl.out = rPairsFL, threshold.match = 0.95, combine.dfs = TRUE)
-  print(confusion(rPairsFL))
-  #sink("sink.txt", append=TRUE, type=c("output", "message"))
-  print(summary(rPairsFL))
-  print(paste("[",as.character(size),"]", " ---------------------------",  sep = ""))
-  #sink()
-  toc()
-  #Sys.sleep(600)
+  for (i in 1:length(blockOut)) {
+
+    sub1 <- dfA[blockOut[[i]]$dfA.inds, ]
+    sub2 <- dfB[blockOut[[i]]$dfB.inds, ]
+
+    fOut[[i]] <- fastLink(
+      dfA = sub1,
+      dfB = sub2,
+      varnames = linkageFields[1:5],
+      stringdist.match = linkageFields[1:5],
+      stringdist.method = "lv",
+      return.all = TRUE)
+  }
+
+  timeEnd <- (format(Sys.time(), "%OS"))
+
+  links <- 0
+  truePositive <- 0
+  falsePositive <- 0
+  linksPair <- 0
+  timeTaken <- abs(as.numeric(timeEnd) - as.numeric(timeStart))
+
+  for (i in 1:length(fOut)) {
+    matches <- fOut[[i]]
+
+    indsA <- matches[["matches"]][["inds.a"]]
+    indsB <- matches[["matches"]][["inds.b"]]
+
+    inds <- data.frame(indsA, indsB)
+    truePositive <- truePositive + nrow(inds[inds$indsA == inds$indsB, ])
+    falsePositive <- falsePositive + nrow(inds[inds$indsA != inds$indsB, ])
+    links <- links + nrow(matches[["matches"]])
+
+    blocks <- blockOut[[i]]
+    pairsA <- length(blocks[["dfA.inds"]])
+    pairsB <- length(blocks[["dfB.inds"]])
+
+    linksPair <- linksPair + (pairsA * pairsB)
+  }
+
+  falseNegative <- round(size / 2) - truePositive
+
+  precision <- truePositive / (truePositive + falsePositive)
+  recall <- truePositive / (truePositive + falseNegative)
+
+  output <- paste("Sample Size: ", size,
+                  "|Links Predicted: ", links,
+                  "|Time Taken: ", timeTaken,
+                  "|Precision: ", precision,
+                  "|Recall: ", recall,
+                  "|Linkage Pairs: ", linksPair, sep = "")
+
+  write(output, file = "results/fastLink_block.txt", append = TRUE)
+
+  Sys.sleep(600)
 }
