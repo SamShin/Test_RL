@@ -17,11 +17,6 @@ results_folder = root_folder / "results"
 
 columns = ["id", "first_name", "middle_name", "last_name", "res_street_address", "birth_year", "zip_code"]
 
-#missing_percent = [0.0, 0.1, 0.1, 0.1, 0.1, 0.1, 0.0]
-
-#data = pd.read_csv("data/clean_county.csv", low_memory=False)
-#df = pd.DataFrame(data)[columns].astype(str)
-
 settings = {
     "link_type": "link_only",
     "unique_id_column_name": "id",
@@ -32,6 +27,7 @@ settings = {
         cl.levenshtein_at_thresholds(col_name="res_street_address", distance_threshold_or_thresholds=1, include_exact_match_level=False),
         cl.levenshtein_at_thresholds(col_name="birth_year", distance_threshold_or_thresholds=1, include_exact_match_level=False)
     ],
+    #Blocking used here
     "blocking_rules_to_generate_predictions": [
        "l.zip_code = r.zip_code"
     ]
@@ -65,12 +61,12 @@ for size in x:
 
     false_positive = len(df_predict.loc[df_predict["id_l"] != df_predict["id_r"]])
     true_positive = len(df_predict.loc[df_predict["id_l"] == df_predict["id_r"]])
-    false_negative = round(size/2) - true_positive
+    false_negative = round(size / 2) - true_positive
 
     precision = true_positive / (true_positive + false_positive)
     recall = true_positive / (true_positive + false_negative)
 
-    with open(os.path.join(results_folder, "splink_record_linkage_block.txt"), "a") as f:
+    with open(os.path.join(results_folder, "splink.txt"), "a") as f:
         f.writelines(
             "Sample Size: " + str(size) +
             "|Links Predicted: " + str(len(df_predict)) +
@@ -81,4 +77,4 @@ for size in x:
             "\n"
         )
 
-    #time.sleep(600)
+    time.sleep(600)

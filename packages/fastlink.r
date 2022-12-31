@@ -1,39 +1,21 @@
-library(fastLink)
+library("fastLink")
+library("dplyr")
 
 myOptions <- options(digits.secs = 2)
-
-dataSet <- read.csv("data/clean_county.csv", header = TRUE)
-
-linkageFields <- c("first_name", "middle_name", "last_name", "res_street_address", "birth_year", "zip_code")
-dataSet <- dataSet[linkageFields]
-dataSet$birth_year <- as.character((dataSet$birth_year))
+linkageFields <- c("first_name", "middle_name", "last_name", "res_street_address", "birth_year", "zip_code", "id")
 
 x <- c(2000,4000,6000,8000,10000,12000,14000,16000,18000,20000,22000,24000,26000,28000,30000,32000,34000,36000,38000,40000)
 for (size in x) {
-  sampleSize <- size
-  sampleSize <- as.integer(sampleSize) * 1.5
-  sampleCutA <- sampleSize / 3
 
-  sampleSet <- dataSet
-  sampleSet <- sampleSet[sample(nrow(sampleSet), sampleSize), ]
+  dfAName <- file.path("sample_df", paste(size, "_dfA.csv", sep = ""))
+  dfBName <- file.path("sample_df", paste(size, "_dfB.csv", sep = ""))
 
-  columns <- colnames(sampleSet)
-  for (name in columns[1:5]) {
-    sampleSet[[name]][sample(nrow(sampleSet), sampleSize * 0.1)] <- NA
-  }
+  dfA <- read.csv(dfAName)
+  dfB <- read.csv(dfBName)
 
-  dfAFirstHalf <- sampleSet[1:sampleCutA, ]
-  dfBFirstHalf <- sampleSet[1:sampleCutA, ]
+  timeStart <- Sys.time()
 
-  dfASecondHalf <- sampleSet[(sampleCutA + 1):(2 * sampleCutA), ]
-  dfBSecondHalf <- tail(sampleSet, n = sampleCutA)
-
-  dfA <- rbind(dfAFirstHalf, dfASecondHalf)
-  dfB <- rbind(dfBFirstHalf, dfBSecondHalf)
-
-  timeStart <- (format(Sys.time(), "%OS"))
-
-  blockOut <- blockData(dfA, dfB, varnames = c("zip_code"))
+  blockOut <- blockData(dfA, dfB, varnames = c("zip_code")) #Blocking used here
   fOut <- vector(mode = "list", length = length(blockOut))
 
   for (i in 1:length(blockOut)) {
@@ -45,18 +27,20 @@ for (size in x) {
       dfA = sub1,
       dfB = sub2,
       varnames = linkageFields[1:5],
-      stringdist.match = linkageFields[1:5],
+      stringdist.match = linkageFields[1:4],
       stringdist.method = "lv",
-      return.all = TRUE)
+      numeric.match = linkageFields[5],
+      return.all = TRUE,
+      return.df = TRUE)
   }
 
-  timeEnd <- (format(Sys.time(), "%OS"))
+  timeEnd <- Sys.time()
 
-  links <- 0
-  truePositive <- 0
-  falsePositive <- 0
-  linksPair <- 0
-  timeTaken <- abs(as.numeric(timeEnd) - as.numeric(timeStart))
+  links <- 0L
+  truePositive <- 0L
+  falsePositive <- 0L
+  linksPair <- 0L
+  timeTaken <- as.character(difftime(timeEnd, timeStart, units = "secs")[[1]])
 
   for (i in 1:length(fOut)) {
     matches <- fOut[[i]]
@@ -67,8 +51,11 @@ for (size in x) {
     inds <- data.frame(indsA, indsB)
     truePositive <- truePositive + nrow(inds[inds$indsA == inds$indsB, ])
     falsePositive <- falsePositive + nrow(inds[inds$indsA != inds$indsB, ])
-    links <- links + nrow(matches[["matches"]])
+    currentLinks <- nrow(matches[["matches"]])
 
+    if (!is.null(currentLinks)) {
+      links <- (links + currentLinks)
+    }
     blocks <- blockOut[[i]]
     pairsA <- length(blocks[["dfA.inds"]])
     pairsB <- length(blocks[["dfB.inds"]])
@@ -88,7 +75,7 @@ for (size in x) {
                   "|Recall: ", recall,
                   "|Linkage Pairs: ", linksPair, sep = "")
 
-  write(output, file = "results/fastLink_block.txt", append = TRUE)
+  write(output, file = "results/fastlink.txt", append = TRUE)
 
   Sys.sleep(600)
 }

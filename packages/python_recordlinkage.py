@@ -23,7 +23,7 @@ for size in x:
     time_start = time.time()
 
     indexer = recordlinkage.Index()
-    indexer.add(Block("zip_code", "zip_code"))
+    indexer.add(Block("zip_code", "zip_code")) #Blocking used here
 
     pairs = indexer.index(dfA, dfB)
 
@@ -41,19 +41,19 @@ for size in x:
 
     time_end = time.time()
 
-    dfA_links = dfA.index.tolist()[0:(size//2)]
-    dfB_links = dfB.index.tolist()[0:(size//2)]
+    dfA_links = dfA.index.tolist()[0 : (size // 2)]
+    dfB_links = dfB.index.tolist()[0 : (size // 2)]
     links_true = pd.MultiIndex.from_arrays([dfA_links,dfB_links])
 
-    with open(os.path.join(results_folder, "python_record_linkage.txt"), "a") as f:
+    with open(os.path.join(results_folder, "python_recordlinkage.txt"), "a") as f:
         f.writelines(
             "Sample Size: " + str(size) +
+            "|Links Predicted: " + str(len(links_pred)) +
             "|Time Taken: " + str(round(time_end - time_start, 2)) +
             "|Precision: " + str(recordlinkage.precision(links_true, links_pred)) +
             "|Recall: " + str(recordlinkage.recall(links_true, links_pred)) +
             "|Linkage Pairs: " + str(len(pairs)) +
-            "|Links Predicted: " + str(len(links_pred)) +
             "\n")
 
-    #time.sleep(600)
+    time.sleep(600)
 
