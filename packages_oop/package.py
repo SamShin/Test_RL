@@ -11,7 +11,7 @@ import recordlinkage
 from recordlinkage.index import Block
 
 
-class packages:
+class Packages:
     def __init__(self):
         pass
 
@@ -20,7 +20,8 @@ class packages:
         sample_size:Union[int, list],
         linkage_field:list,
         block:Union[bool, str],
-        output_file:str
+        output_file:str,
+        sleep:int
     ) -> None:
 
         #Logs to keep quite
@@ -96,6 +97,8 @@ class packages:
                     "|Linkage Pairs: " + str(pairs) +
                     "\n"
                 )
+
+            time.sleep(sleep)
 
     def python_recordlinkage(
         self,

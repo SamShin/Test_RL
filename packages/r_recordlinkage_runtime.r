@@ -4,27 +4,25 @@ library("dplyr")
 myOptions <- options(digits.secs = 2)
 linkageFields <- c("first_name", "middle_name", "last_name", "res_street_address", "birth_year", "zip_code", "id")
 
-#x <- c(2000,4000,6000,8000,10000,12000,14000,16000,18000,20000,22000,24000,26000,28000,30000,32000,34000,36000,38000,40000)
-x <- c(2000)
+x <- c(2000,4000,6000,8000,10000,12000,14000,16000,18000,20000,22000,24000,26000,28000,30000,32000,34000,36000,38000,40000)
 for (size in x) {
 
     dfAName <- file.path("sample_df", paste(size, "_dfA.csv", sep = ""))
     dfBName <- file.path("sample_df", paste(size, "_dfB.csv", sep = ""))
 
-  dfA <- read.csv(dfAName, header = TRUE)
-  dfB <- read.csv(dfBName, header = TRUE)
-  
-  print(head(dfA))
+  dfA <- read.csv(dfAName, na.strings = c("", "NA"))
+  dfB <- read.csv(dfBName, na.strings = c("", "NA"))
+
   timeStart <- Sys.time()
 
   rPairsRL <- compare.linkage(dataset1 = dfA,
                               dataset2 = dfB,
-                              blockfld = c(7), #Blocking used here
+                              blockfld = "zip_code", #Blocking used here
                               strcmpfun = levenshteinDist,
-                              exclude = c(1),
+                              exclude = "id",
                               identity1 = dfA[["id"]],
                               identity2 = dfB[["id"]])
-            
+
 
   rPairsWeights <- emWeights(rpairs = rPairsRL)
 
@@ -72,7 +70,7 @@ for (size in x) {
                   "|Recall: ", recall,
                   "|Linkage Pairs: ", linkagePairs, sep = "")
 
-  write(output, file = "results/test.txt", append = TRUE)
+  write(output, file = "results/r_recordlinkage.txt", append = TRUE)
 
-  #Sys.sleep(600)
+  Sys.sleep(600)
 }

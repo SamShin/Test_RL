@@ -1,14 +1,16 @@
-import packages_oop.package as p
-import numpy as np
-import packages_oop.test2 as test
-np.random.seed(999)
+import packages_oop.package as packages
+from rpy2 import robjects as r
+import os
 
-
-pack = p.packages()
-test1 = test.Test()
+runtime = [2000,4000,6000,8000,10000,12000,14000,16000,18000,20000,22000,24000,26000,28000,30000,32000,34000,36000,38000,40000]
 linkage_field = ["first_name", "middle_name", "last_name", "res_street_address", "birth_year"]
 
-#plink = pack.splink(2000, linkage_field, "zip_code", "test.txt")
-python_recordlinkage = pack.python_recordlinkage(2000, linkage_field, "zip_code", "test.txt", 0)
+r.r.source("packages_oop/package.r")
+package = packages.Packages()
 
-#splink2 = test1.splink()
+for i in range(2):
+    python_recordlinkage = package.python_recordlinkage(runtime, linkage_field, "zip_code", "results/python_recordlinkage.txt", 0)
+    splink = package.splink(runtime, linkage_field, "zip_code", "results/splink.txt",0)
+
+    r_recordlinkage = r.r['rRecordLinkage'](runtime, linkage_field, True, "zip_code", "id", "results/r_recordlinkage", 0)
+    fastlink = r.r['fastlink_runtime'](runtime, linkage_field, True, "zip_code", "results/fastlink.txt", 0)

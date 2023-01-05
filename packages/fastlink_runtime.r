@@ -6,39 +6,32 @@ linkageFields <- c("first_name", "middle_name", "last_name", "res_street_address
 
 x <- c(2000,4000,6000,8000,10000,12000,14000,16000,18000,20000,22000,24000,26000,28000,30000,32000,34000,36000,38000,40000)
 for (size in x) {
-
   dfAName <- file.path("sample_df", paste(size, "_dfA.csv", sep = ""))
   dfBName <- file.path("sample_df", paste(size, "_dfB.csv", sep = ""))
 
-  dfA <- read.csv(dfAName)
-  dfB <- read.csv(dfBName)
+  dfA <- read.csv(dfAName, na.strings = c("", "NA"))
+  dfB <- read.csv(dfBName, na.strings = c("", "NA"))
 
   timeStart <- Sys.time()
 
   blockOut <- blockData(dfA, dfB, varnames = c("zip_code")) #Blocking used here
   fOut <- vector(mode = "list", length = length(blockOut))
-  
-  dfA <- dfA[c("first_name", "middle_name", "last_name", "res_street_address", "birth_year")]
-  dfB <- dfB[c("first_name", "middle_name", "last_name", "res_street_address", "birth_year")]
-  for (i in 1:length(blockOut)) {
 
+  dfA <- dfA[c("first_name", "middle_name", "last_name", "res_street_address", "birth_year", "zip_code")]
+  dfB <- dfB[c("first_name", "middle_name", "last_name", "res_street_address", "birth_year", "zip_code")]
+
+  for (i in 1:length(blockOut)) {
     sub1 <- dfA[blockOut[[i]]$dfA.inds, ]
     sub2 <- dfB[blockOut[[i]]$dfB.inds, ]
 
     fOut[[i]] <- fastLink(
       dfA = sub1,
       dfB = sub2,
-      #varnames = linkageFields[1:5],
       varnames = c("first_name", "middle_name", "last_name", "res_street_address", "birth_year"),
-      #stringdist.match = linkageFields[1:4],
-      stringdist.match = c("first_name", "middle_name", "last_name", "res_street_address"),
+      stringdist.match = c("first_name", "middle_name", "last_name", "res_street_address", "birth_year"),
       stringdist.method = "lv",
-      #numeric.match = linkageFields[5],
-      numeric.match = c("birth_year"),
-      return.all = TRUE,
-      return.df = TRUE)
+      return.all = TRUE)
   }
-
   timeEnd <- Sys.time()
 
   links <- 0L
@@ -53,19 +46,20 @@ for (size in x) {
     indsA <- matches[["matches"]][["inds.a"]]
     indsB <- matches[["matches"]][["inds.b"]]
 
-    inds <- data.frame(indsA, indsB)
-    truePositive <- truePositive + nrow(inds[inds$indsA == inds$indsB, ])
-    falsePositive <- falsePositive + nrow(inds[inds$indsA != inds$indsB, ])
-    currentLinks <- nrow(matches[["matches"]])
+    if (length(indsA) != 0) {
+      inds <- data.frame(indsA, indsB)
+      truePositive <- truePositive + nrow(inds[inds$indsA == inds$indsB, ])
+      falsePositive <- falsePositive + nrow(inds[inds$indsA != inds$indsB, ])
+      currentLinks <- nrow(matches[["matches"]])
 
-    if (!is.null(currentLinks)) {
       links <- (links + currentLinks)
-    }
-    blocks <- blockOut[[i]]
-    pairsA <- length(blocks[["dfA.inds"]])
-    pairsB <- length(blocks[["dfB.inds"]])
 
-    linksPair <- linksPair + (pairsA * pairsB)
+      blocks <- blockOut[[i]]
+      pairsA <- length(blocks[["dfA.inds"]])
+      pairsB <- length(blocks[["dfB.inds"]])
+
+      linksPair <- linksPair + (pairsA * pairsB)
+    }
   }
 
   falseNegative <- round(size / 2) - truePositive
@@ -82,5 +76,6 @@ for (size in x) {
 
   write(output, file = "results/fastlink.txt", append = TRUE)
 
-  #Sys.sleep(600)
+  Sys.sleep(600)
 }
+
