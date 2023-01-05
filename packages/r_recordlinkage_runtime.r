@@ -10,8 +10,8 @@ for (size in x) {
   dfAName <- file.path("sample_df", paste(size, "_dfA.csv", sep = ""))
   dfBName <- file.path("sample_df", paste(size, "_dfB.csv", sep = ""))
 
-  dfA <- read.csv(dfAName)
-  dfB <- read.csv(dfBName)
+  dfA <- read.csv(dfAName, na.strings = c("", "NA"))
+  dfB <- read.csv(dfBName, na.strings = c("", "NA"))
 
   timeStart <- Sys.time()
 
