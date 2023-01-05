@@ -2,7 +2,7 @@ library("fastLink")
 library("dplyr")
 
 myOptions <- options(digits.secs = 2)
-linkageFields <- c("first_name", "middle_name", "last_name", "res_street_address", "birth_year", "zip_code", "id")
+linkageFields <- c("first_name", "middle_name", "last_name", "res_street_address", "birth_year", "zip_code")
 
 x <- c(2000,4000,6000,8000,10000,12000,14000,16000,18000,20000,22000,24000,26000,28000,30000,32000,34000,36000,38000,40000)
 for (size in x) {
@@ -17,7 +17,9 @@ for (size in x) {
 
   blockOut <- blockData(dfA, dfB, varnames = c("zip_code")) #Blocking used here
   fOut <- vector(mode = "list", length = length(blockOut))
-
+  
+  dfA <- dfA[c("first_name", "middle_name", "last_name", "res_street_address", "birth_year")]
+  dfB <- dfB[c("first_name", "middle_name", "last_name", "res_street_address", "birth_year")]
   for (i in 1:length(blockOut)) {
 
     sub1 <- dfA[blockOut[[i]]$dfA.inds, ]
@@ -26,10 +28,13 @@ for (size in x) {
     fOut[[i]] <- fastLink(
       dfA = sub1,
       dfB = sub2,
-      varnames = linkageFields[1:5],
-      stringdist.match = linkageFields[1:4],
+      #varnames = linkageFields[1:5],
+      varnames = c("first_name", "middle_name", "last_name", "res_street_address", "birth_year"),
+      #stringdist.match = linkageFields[1:4],
+      stringdist.match = c("first_name", "middle_name", "last_name", "res_street_address"),
       stringdist.method = "lv",
-      numeric.match = linkageFields[5],
+      #numeric.match = linkageFields[5],
+      numeric.match = c("birth_year"),
       return.all = TRUE,
       return.df = TRUE)
   }
@@ -77,5 +82,5 @@ for (size in x) {
 
   write(output, file = "results/fastlink.txt", append = TRUE)
 
-  Sys.sleep(600)
+  #Sys.sleep(600)
 }

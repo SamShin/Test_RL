@@ -33,7 +33,8 @@ settings = {
     ]
 }
 
-x = [2000,4000,6000,8000,10000,12000,14000,16000,18000,20000,22000,24000,26000,28000,30000,32000,34000,36000,38000,40000]
+#x = [2000,4000,6000,8000,10000,12000,14000,16000,18000,20000,22000,24000,26000,28000,30000,32000,34000,36000,38000,40000]
+x = [2000]
 for size in x:
 
     dfA = pd.read_csv(os.path.join(df_folder, str(size) + "_dfA.csv"), names = columns)
@@ -66,7 +67,7 @@ for size in x:
     precision = true_positive / (true_positive + false_positive)
     recall = true_positive / (true_positive + false_negative)
 
-    with open(os.path.join(results_folder, "splink.txt"), "a") as f:
+    with open(os.path.join(results_folder, "test.txt"), "a") as f:
         f.writelines(
             "Sample Size: " + str(size) +
             "|Links Predicted: " + str(len(df_predict)) +
@@ -77,4 +78,4 @@ for size in x:
             "\n"
         )
 
-    time.sleep(600)
+    #time.sleep(600)
